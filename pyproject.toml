@@ -4,4 +4,6 @@ version = "0.1.0"
 description = "A complete application w. frontend and backend that analyzes and visualizes brainwaves."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "mne>=1.10.1",
+]
