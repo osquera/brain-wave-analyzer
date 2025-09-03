@@ -205,3 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Example files with brain data:
+*.edf
+
+# vscode settings:
+.vscode/
