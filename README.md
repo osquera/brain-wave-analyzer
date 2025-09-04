@@ -19,3 +19,14 @@ So i guesstimated some ranges for these filters and applied them.
 
 Calculating the PSD was pretty straightforward using the mne library. I choose to display the mean of the channels in the PSD plot but I'm unsure if this is 'bad'.
 
+![figures\frequency_band_psd.png](figures\frequency_band_psd.png)
+
+## Comparing the power
+
+Here i calculated the average power in each band:
+
+![figures\avg_power_freq_bands.png](figures\avg_power_freq_bands.png)
+
+And the relative power:
+
+![figures\rel_power_freq_bands.png](figures\rel_power_freq_bands.png)
