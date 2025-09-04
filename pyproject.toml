@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.116.1",
     "matplotlib>=3.10.6",
     "mne>=1.10.1",
+    "python-multipart>=0.0.20",
     "streamlit>=1.49.1",
     "uvicorn>=0.35.0",
 ]
