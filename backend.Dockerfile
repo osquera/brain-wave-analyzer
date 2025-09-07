@@ -17,9 +17,7 @@ RUN apk add --no-cache \
 COPY requirements-backend.txt .
 RUN pip install --no-cache-dir -r requirements-backend.txt
 
-# Copy the backend code and sample data
 COPY src/backend.py .
-COPY eeg_recording.edf .
 
 # Create directories for static files
 RUN mkdir -p static/figures
