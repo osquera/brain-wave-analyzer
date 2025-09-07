@@ -1,3 +1,4 @@
+import os
 from http import HTTPStatus
 
 import pandas as pd
@@ -9,8 +10,7 @@ from requests.exceptions import Timeout
 st.set_page_config(page_title="Brain Wave Analyzer", page_icon="🧠", layout="wide")
 
 # Define the API URL
-# API_URL = "http://backend:8000"  # For Docker
-API_URL = "http://localhost:8000"  # For local development
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 # App header
 st.title("🧠 Brain Wave Analyzer")
