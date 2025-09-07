@@ -211,3 +211,6 @@ __marimo__/
 
 # vscode settings:
 .vscode/
+
+# Static files:
+static/
