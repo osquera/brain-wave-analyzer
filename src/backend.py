@@ -1,26 +1,26 @@
-from collections.abc import Sequence
-import mne
-import matplotlib.pyplot as plt
-import os
-import tempfile
 import shutil
+import tempfile
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Annotated
+
 import fastapi
-from fastapi import File, UploadFile, HTTPException
-from fastapi.staticfiles import StaticFiles
+import matplotlib.pyplot as plt
+import mne
+from fastapi import File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from mne.io.edf.edf import RawEDF
 
 
-def read_mne_file(file_path: str):
+def read_mne_file(file_path: str) -> RawEDF:
     """Read an MNE file and return the raw data."""
-    raw = mne.io.read_raw_edf(file_path, preload=True, infer_types=True)
-    return raw
+    return mne.io.read_raw_edf(file_path, preload=True, infer_types=True)
 
 
-def preprocess_mne_file(file_path: str, low_freq: float = 0.1, high_freq: float = 30.0):
+def preprocess_mne_file(file_path: str, low_freq: float = 0.1, high_freq: float = 30.0) -> RawEDF:
     """Read and preprocess an MNE file."""
-
     # montage = mne.channels.make_standard_montage("standard_1020")
 
     raw = read_mne_file(file_path)
@@ -31,19 +31,16 @@ def preprocess_mne_file(file_path: str, low_freq: float = 0.1, high_freq: float 
     # Use low-pass filter to remove high-frequency noise (30 Hz)
     filtered_file = raw.copy().filter(l_freq=low_freq, h_freq=high_freq)
 
-    filtered_cut = filtered_file.crop(tmin=0, tmax=60)  # type: ignore # First 60 seconds
-
-    return filtered_cut
+    return filtered_file.crop(tmin=0, tmax=60) # pyright: ignore[reportAttributeAccessIssue, reportReturnType]
 
 
 def collect_and_plot_psds(
-    data,
+    data: RawEDF,
     ranges: Sequence[tuple[float | None, float | None]],
     titles: list[str],
     plot: bool = True,
-):
+) -> tuple[list, list]:
     """Plot the Power Spectral Density (PSD) for given frequency ranges."""
-
     n_ranges = len(ranges)
     fig, axes = plt.subplots(
         n_ranges // 2 + n_ranges % 2,
@@ -58,21 +55,22 @@ def collect_and_plot_psds(
     freqs_list = []
     psd_list = []
 
-    for ax, (fmin, fmax), title in zip(axes, ranges, titles):
+    for ax, (fmin, fmax), title in zip(axes, ranges, titles, strict=False):
         if fmin is not None and fmax is not None and fmin >= fmax:
-            raise ValueError("fmin must be less than fmax.")
+            msg = "fmin must be less than fmax."
+            raise ValueError(msg)
 
-        if fmax is None and fmin is not None:
-            spectrum = data.compute_psd(fmin=fmin)
+        if fmax is None and type(fmin) is float:
+            spectrum = data.compute_psd(fmin=fmin) # pyright: ignore[reportArgumentType]
 
-        elif fmin is None and fmax is not None:
+        elif fmin is None and type(fmax) is float:
             spectrum = data.compute_psd(fmax=fmax)
 
         elif fmin is None and fmax is None:
             spectrum = data.compute_psd()
 
         else:
-            spectrum = data.compute_psd(fmin=fmin, fmax=fmax)
+            spectrum = data.compute_psd(fmin=fmin, fmax=fmax) # pyright: ignore[reportArgumentType]
 
         psds, freqs = spectrum.get_data(return_freqs=True)
         freqs_list.append(freqs)
@@ -83,10 +81,8 @@ def collect_and_plot_psds(
         ax.set_title(title)
         ax.set_xlabel("Frequency (Hz)")
         ax.set_ylabel("Power/Frequency (dB/Hz)")
-        ax.set_xlim(
-            fmin if fmin is not None else 0, fmax if fmax is not None else freqs.max()
-        )
-        ax.grid(True)
+        ax.set_xlim(fmin if fmin is not None else 0, fmax if fmax is not None else freqs.max())
+        ax.grid(True)  # noqa: FBT003
 
     plt.tight_layout()
     if plot:
@@ -95,7 +91,7 @@ def collect_and_plot_psds(
     return freqs_list, psd_list
 
 
-def plot_power_in_bar_chart(freqs_list, psd_list, titles):
+def plot_power_in_bar_chart(psd_list: list, titles: list) -> None:
     """Plot the average power in each frequency band as a bar chart."""
     avg_psd = [psd.mean() for psd in psd_list]
     plt.bar(titles, avg_psd, color="blue")
@@ -107,7 +103,7 @@ def plot_power_in_bar_chart(freqs_list, psd_list, titles):
     plt.show()
 
 
-def plot_relative_power_bar_chart(freqs_list, psd_list, titles):
+def plot_relative_power_bar_chart(psd_list: list, titles: list) -> None:
     """Plot the relative power in each frequency band as a bar chart."""
     total_power = sum(psd.sum() for psd in psd_list)
     rel_psd = [psd.sum() / total_power for psd in psd_list]
@@ -120,11 +116,11 @@ def plot_relative_power_bar_chart(freqs_list, psd_list, titles):
     plt.show()
 
 
-def process_edf_data(file_path, low_freq=0.1, high_freq=40.0):
+def process_edf_data(
+    file_path: str, low_freq: float = 0.1, high_freq: float = 40.0
+) -> tuple[dict[str, list[str] | list[float]], list, list, list]:
     """Process an EDF file and return the analysis results."""
-    preproc_data = preprocess_mne_file(
-        file_path, low_freq=low_freq, high_freq=high_freq
-    )
+    preproc_data = preprocess_mne_file(file_path, low_freq=low_freq, high_freq=high_freq)
 
     freq_ranges = [
         (0.5, 4.0),
@@ -143,9 +139,7 @@ def process_edf_data(file_path, low_freq=0.1, high_freq=40.0):
         "Full Spectrum (0.5+ Hz)",
     ]
 
-    freqs_list, psd_list = collect_and_plot_psds(
-        preproc_data, freq_ranges, titles, plot=False
-    )
+    freqs_list, psd_list = collect_and_plot_psds(preproc_data, freq_ranges, titles, plot=False)
 
     # Prepare the data for return
     avg_psd = [float(psd.mean()) for psd in psd_list]
@@ -185,14 +179,16 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     return {"message": "Welcome to Brain Wave Analyzer API"}
 
 
 @app.post("/analyze-edf/")
-async def analyze_edf_file(file: UploadFile = File(...)):
-    """
-    Upload an EDF file and process it for EEG analysis.
+async def analyze_edf_file(
+    file: Annotated[UploadFile, File()],
+) -> dict[str, str | dict[str, list[str] | list[float] | dict[str, str]]]:
+    """Upload an EDF file and process it for EEG analysis.
+
     Returns analysis results and URLs to generated plots.
     """
     if not file:
@@ -203,34 +199,33 @@ async def analyze_edf_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only .edf files are supported")
 
     # Create a temporary file
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".edf")
-
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".edf") as temp_file:
+        try:
+            # Write uploaded file to temp file
+            with temp_file as f:
+                shutil.copyfileobj(file.file, f)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error saving uploaded file: {e!s}") from e
     try:
-        # Write uploaded file to temp file
-        with temp_file as f:
-            shutil.copyfileobj(file.file, f)
-
         # Process the file using our functions
         low_freq = 0.1
         high_freq = 40.0
 
         # Process data
-        results, freqs_list, psd_list, titles = process_edf_data(
-            temp_file.name, low_freq=low_freq, high_freq=high_freq
-        )
+        results, freqs_list, psd_list, titles = process_edf_data(temp_file.name, low_freq=low_freq, high_freq=high_freq)
 
         # Generate a unique ID for this analysis
         analysis_id = str(uuid.uuid4())
 
         # Save the PSD plot
         plt.figure(figsize=(10, 6))
-        for i, (freqs, psd, title) in enumerate(zip(freqs_list, psd_list, titles)):
+        for i, (freqs, psd, title) in enumerate(zip(freqs_list, psd_list, titles, strict=False)):
             plt.subplot(3, 2, i + 1)
             plt.plot(freqs, psd.mean(axis=0), color="blue")
             plt.title(title)
             plt.xlabel("Frequency (Hz)")
             plt.ylabel("Power/Frequency (dB/Hz)")
-            plt.grid(True)
+            plt.grid(visible=True)
         plt.tight_layout()
         psd_filename = f"{analysis_id}_frequency_bands.png"
         plt.savefig(figures_dir / psd_filename)
@@ -260,6 +255,11 @@ async def analyze_edf_file(file: UploadFile = File(...)):
         plt.savefig(figures_dir / rel_power_filename)
         plt.close()
 
+    except Exception as e:
+        # Handle any exceptions
+        raise HTTPException(status_code=500, detail=f"Error processing file: {e!s}") from e
+
+    else:
         # Return the results with URLs to the plots
         return {
             "analysis_id": analysis_id,
@@ -273,13 +273,11 @@ async def analyze_edf_file(file: UploadFile = File(...)):
                 },
             },
         }
-    except Exception as e:
-        # Handle any exceptions
-        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
     finally:
         # Delete temp file
-        if os.path.exists(temp_file.name):
-            os.unlink(temp_file.name)
+        temp_path = Path(temp_file.name)
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 def main():
@@ -287,8 +285,8 @@ def main():
     file_path = "eeg_recording.edf"
     results, freqs_list, psd_list, titles = process_edf_data(file_path)
     print("Analysis results:", results)
-    plot_power_in_bar_chart(freqs_list, psd_list, titles)
-    plot_relative_power_bar_chart(freqs_list, psd_list, titles)
+    plot_power_in_bar_chart( psd_list, titles)
+    plot_relative_power_bar_chart( psd_list, titles)
 
 
 if __name__ == "__main__":

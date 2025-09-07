@@ -16,5 +16,60 @@ dependencies = [
 [dependency-groups]
 dev = [
     "debugpy>=1.8.16",
+    "loguru>=0.7.3",
     "ruff>=0.12.11",
 ]
+
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+lint.select = [
+    "ALL", # include all the rules, including new ones
+]
+lint.ignore = [
+  "PT009", # ignore Checks for uses of assertion methods from the unittest module.
+  "S101", # ignore checking for assert
+  "D100", # ignore missing docstring in public module
+  "D101", # ignore missing docstring in public class
+  "D102", # ignore missing docstring in public method
+  "D103", # ignore missing docstring in public function
+  "D104", # ignore undocumented public package definitions.
+  "D105", # ignore missing docstring in public class definitions, for nested classes.
+  "D106", # ignore missing docstring in public method
+  "D107", # ignore missing docstring in public function
+  "INP001", # ignore checking for missing __init__.py files
+  "T100", # ignore Checks for the presence of debugger calls and imports.
+  "TID252", # ignore Prefer absolute imports over relative imports from parent modules.
+  "S602", # ignore subprocess with shell=True
+  "ERA001", # ignore outcommented code
+  "TD002", # Ignore missing author in TODO comments.
+  "TD003", # Ignore Missing issue link for this TODO
+  "D213",
+  "D203",
+  "COM812",
+  "C901", # ignore cyclomatic complexity
+  "PLR0915", # ignore too many statements in function
+  "PLR0912", # ignore too many branches in function
+  "PLR0913", # ignore too many arguments in function
+  "FBT001", # Ignore bolean type in function expression
+  "FBT002", # Ignore bolean type in function expression
+  "PLR0911", # ignore too many return statements in function
+  "N807", # ignore function cant be dunder
+]
+ # Allow unused variables when underscore-prefixed.
+lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
