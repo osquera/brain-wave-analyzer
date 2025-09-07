@@ -1,4 +1,6 @@
+import argparse
 import shutil
+import sys
 import tempfile
 import uuid
 from collections.abc import Sequence
@@ -11,7 +13,32 @@ import mne
 from fastapi import File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from loguru import logger
 from mne.io.edf.edf import RawEDF
+
+# Argument parser for log level.
+parser = argparse.ArgumentParser(description="Brain Wave Analyzer Backend")
+parser.add_argument(
+    "--log-level",
+    type=str,
+    default="INFO",
+    choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    help="Set the logging level",
+)
+
+args = parser.parse_args()
+
+# Set log level.
+logger.remove()
+logger.add(
+    sys.stderr,
+    level=args.log_level,
+    format="<green>{time:HH:mm:ss}</green> | "
+    "<blue><level>{level: <8}</level></blue> | "
+    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+    "<level>{message}</level>",
+)
+logger.info(f"Log level set to {args.log_level}.")
 
 
 def read_mne_file(file_path: str) -> RawEDF:
@@ -280,16 +307,22 @@ async def analyze_edf_file(
             temp_path.unlink()
 
 
-def main():
+def main() -> None:
     """Run the example with the sample EDF file."""
     file_path = "eeg_recording.edf"
     results, freqs_list, psd_list, titles = process_edf_data(file_path)
-    print("Analysis results:", results)
+    logger.info(f"Analysis results: {results}")
     plot_power_in_bar_chart( psd_list, titles)
     plot_relative_power_bar_chart( psd_list, titles)
 
 
 if __name__ == "__main__":
+    import os
+
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Default to localhost unless explicitly set to production mode
+    host = "0.0.0.0" if os.getenv("PRODUCTION_MODE") == "1" else "127.0.0.1"  # noqa: S104
+
+    logger.info(f"Starting server on {host}:8000")
+    uvicorn.run(app, host=host, port=8000)
