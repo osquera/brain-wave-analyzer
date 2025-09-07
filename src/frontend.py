@@ -100,8 +100,7 @@ if uploaded_file is not None:
         except requests.RequestException as err:
             # Catch specific request-related exceptions
             st.error(f"Error making request: {err!s}")
-        else:
-            st.error(f"Error: {response.status_code} - {response.text}")
+
 else:
     # Show info when no file is uploaded
     st.info("Please upload an EDF file to begin analysis.")
