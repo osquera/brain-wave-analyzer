@@ -69,17 +69,21 @@ if uploaded_file is not None:
                 avg_power = results["average_power"]
                 rel_power = results["relative_power"]
 
+                # Scale up the average power values (from 10^-11) and convert relative power to percentages
+                avg_power_scaled = [power * 10**11 for power in avg_power]
+                rel_power_percent = [power * 100 for power in rel_power]
+
                 df = pd.DataFrame(
                     {
                         "Frequency Band": freq_bands,
-                        "Average Power (dB/Hz)": avg_power,
-                        "Relative Power": rel_power,
+                        "Average Power (10^-11 dB/Hz)": avg_power_scaled,
+                        "Relative Power (%)": rel_power_percent,
                     }
                 )
 
                 # Round the values for better display
-                df["Average Power (dB/Hz)"] = df["Average Power (dB/Hz)"].round(4)
-                df["Relative Power"] = df["Relative Power"].round(4)
+                df["Average Power (10^-11 dB/Hz)"] = df["Average Power (10^-11 dB/Hz)"].round(4)
+                df["Relative Power (%)"] = df["Relative Power (%)"].round(2)
 
                 st.dataframe(df)
 
