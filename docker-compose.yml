@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./static:/app/static
+    networks:
+      - brain-wave-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+    networks:
+      - brain-wave-network
+    environment:
+      - API_URL=http://backend:8000
+
+networks:
+  brain-wave-network:
+    driver: bridge

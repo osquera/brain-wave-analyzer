@@ -1,0 +1,5 @@
+# Frontend requirements
+streamlit>=1.23.0
+requests>=2.31.0
+pandas>=2.3.2
+
