@@ -1,9 +1,81 @@
-# brain-wave-analyzer
-A complete application w. FastAPI frontend and backend that analyzes and visualizes brainwaves.
+# Brain Wave Analyzer
 
+A complete application with FastAPI backend and Streamlit frontend that analyzes and visualizes brainwaves from EDF files.
 
+## Project Structure
 
-# Details on implentation
+```
+brain-wave-analyzer/
+├── src/
+│   ├── backend.py        # FastAPI backend with analysis functions
+│   └── frontend.py       # Streamlit frontend application
+├── static/
+│   └── figures/          # Generated plots saved here
+├── backend.Dockerfile    # Docker configuration for API
+├── frontend.Dockerfile   # Docker configuration for Streamlit
+├── docker-compose.yml    # Docker Compose configuration
+├── requirements-backend.txt
+└── requirements-frontend.txt
+```
+
+## Running the Application
+
+### With Docker (Recommended)
+
+1. Make sure you have Docker installed
+2. Build and run the containers:
+   ```
+   docker-compose up --build
+   ```
+3. Access the frontend at: http://localhost:8501
+4. The backend API is available at: http://localhost:8000
+
+### Without Docker
+
+#### Backend
+
+1. Install backend dependencies 
+   - With uv:
+       ```
+      uv sync --all-extras
+      ```
+
+   - With pip:
+      ```
+      pip install -r requirements-backend.txt
+      ```
+    
+2. Run the backend:
+   ```
+   python src/backend.py
+   ```
+3. The API will be available at: http://localhost:8000
+
+#### Frontend
+
+1. Install frontend dependencies:
+   - With uv:
+      ```
+      uv sync --all-extras
+      ```
+
+   - With pip:
+      ```
+      pip install -r requirements-frontend.txt
+      ```
+2. Run the frontend:
+   ```
+   streamlit run src/streamlit_app.py
+   ```
+3. The frontend will be available at: http://localhost:8501
+
+## API Endpoints
+
+- `GET /`: Welcome message
+- `POST /analyze-edf/`: Upload and analyze an EDF file
+  - Returns analysis results and URLs to plots
+
+# Details on Implementation
 ## Loading and filtering
 
 I've never worked with EEG data before but from what I could read on the internet the EEG data needs to be filtered to remove things such as:
