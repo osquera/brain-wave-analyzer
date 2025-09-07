@@ -2,7 +2,10 @@
 FROM python:3.12.11-alpine
 
 WORKDIR /app
-    
+
+# Set environment variables
+ENV PRODUCTION_MODE=1
+
 # Install system dependencies
 RUN apk add --no-cache \
     libstdc++ \
