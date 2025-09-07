@@ -54,14 +54,14 @@ if uploaded_file is not None:
                     st.image(
                         freq_bands_img,
                         caption="Frequency Band Analysis",
-                        use_column_width=True,
+                        use_container_width=True,
                     )
 
                 with col2:
-                    st.image(avg_power_img, caption="Average Power", use_column_width=True)
+                    st.image(avg_power_img, caption="Average Power", use_container_width=True)
 
                 with col3:
-                    st.image(rel_power_img, caption="Relative Power", use_column_width=True)
+                    st.image(rel_power_img, caption="Relative Power", use_container_width=True)
 
                 # Create a dataframe with the results
                 st.subheader("Frequency Band Data")
