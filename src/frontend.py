@@ -21,13 +21,23 @@ st.subheader("Upload EEG Recording")
 uploaded_file = st.file_uploader("Choose an EDF file", type="edf")
 
 if uploaded_file is not None:
+    start_time = st.slider(
+        "Select start time for analysis (seconds)",
+        min_value=0,
+        max_value=300,  # Maximum of 5 minutes
+        value=0,
+        step=5,
+        help="Choose a time point in the recording to begin analysis (in seconds)",
+    )
+    st.markdown(f"**Selected start time:** {start_time} seconds")
     # Create a progress indicator
     with st.spinner("Processing EEG data..."):
-        # Send the file to the API
+        # Send the file to the API with the selected start time
         files = {"file": uploaded_file}
+        params = {"start_time": start_time}
 
         try:
-            response = requests.post(f"{API_URL}/analyze-edf/", files=files, timeout=30)
+            response = requests.post(f"{API_URL}/analyze-edf/", files=files, params=params, timeout=30)
 
             if response.status_code == HTTPStatus.OK:
                 # Get the results

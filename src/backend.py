@@ -46,11 +46,17 @@ def read_mne_file(file_path: str) -> RawEDF:
     return mne.io.read_raw_edf(file_path, preload=True, infer_types=True)
 
 
-def preprocess_mne_file(file_path: str, low_freq: float = 0.1, high_freq: float = 30.0) -> RawEDF:
+def preprocess_mne_file(
+    file_path: str, low_freq: float = 0.1, high_freq: float = 30.0, start_time: float = 0
+) -> RawEDF:
     """Read and preprocess an MNE file."""
     # montage = mne.channels.make_standard_montage("standard_1020")
 
     raw = read_mne_file(file_path)
+
+    if start_time < 0 or start_time + 60 > raw.times[-1]:
+        msg = "start_time must be non-negative and within the recording duration."
+        raise ValueError(msg)
 
     # raw.set_montage(montage, match_case=False)
 
@@ -58,7 +64,7 @@ def preprocess_mne_file(file_path: str, low_freq: float = 0.1, high_freq: float 
     # Use low-pass filter to remove high-frequency noise (30 Hz)
     filtered_file = raw.copy().filter(l_freq=low_freq, h_freq=high_freq)
 
-    return filtered_file.crop(tmin=0, tmax=60) # pyright: ignore[reportAttributeAccessIssue, reportReturnType]
+    return filtered_file.crop(tmin=start_time, tmax=start_time + 60)  # pyright: ignore[reportAttributeAccessIssue, reportReturnType]
 
 
 def collect_and_plot_psds(
@@ -88,7 +94,7 @@ def collect_and_plot_psds(
             raise ValueError(msg)
 
         if fmax is None and type(fmin) is float:
-            spectrum = data.compute_psd(fmin=fmin) # pyright: ignore[reportArgumentType]
+            spectrum = data.compute_psd(fmin=fmin)  # pyright: ignore[reportArgumentType]
 
         elif fmin is None and type(fmax) is float:
             spectrum = data.compute_psd(fmax=fmax)
@@ -97,7 +103,7 @@ def collect_and_plot_psds(
             spectrum = data.compute_psd()
 
         else:
-            spectrum = data.compute_psd(fmin=fmin, fmax=fmax) # pyright: ignore[reportArgumentType]
+            spectrum = data.compute_psd(fmin=fmin, fmax=fmax)  # pyright: ignore[reportArgumentType]
 
         psds, freqs = spectrum.get_data(return_freqs=True)
         freqs_list.append(freqs)
@@ -144,10 +150,10 @@ def plot_relative_power_bar_chart(psd_list: list, titles: list) -> None:
 
 
 def process_edf_data(
-    file_path: str, low_freq: float = 0.1, high_freq: float = 40.0
+    file_path: str, low_freq: float = 0.1, high_freq: float = 40.0, start_time: float = 0
 ) -> tuple[dict[str, list[str] | list[float]], list, list, list]:
     """Process an EDF file and return the analysis results."""
-    preproc_data = preprocess_mne_file(file_path, low_freq=low_freq, high_freq=high_freq)
+    preproc_data = preprocess_mne_file(file_path, low_freq=low_freq, high_freq=high_freq, start_time=start_time)
 
     freq_ranges = [
         (0.5, 4.0),
@@ -213,10 +219,16 @@ async def root() -> dict[str, str]:
 @app.post("/analyze-edf/")
 async def analyze_edf_file(
     file: Annotated[UploadFile, File()],
+    start_time: float = 0,
 ) -> dict[str, str | dict[str, list[str] | list[float] | dict[str, str]]]:
     """Upload an EDF file and process it for EEG analysis.
 
+    Args:
+        file: The EDF file to analyze
+        start_time: The start time in seconds for analysis (default: 0)
+
     Returns analysis results and URLs to generated plots.
+
     """
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
@@ -239,7 +251,9 @@ async def analyze_edf_file(
         high_freq = 40.0
 
         # Process data
-        results, freqs_list, psd_list, titles = process_edf_data(temp_file.name, low_freq=low_freq, high_freq=high_freq)
+        results, freqs_list, psd_list, titles = process_edf_data(
+            temp_file.name, low_freq=low_freq, high_freq=high_freq, start_time=start_time
+        )
 
         # Generate a unique ID for this analysis
         analysis_id = str(uuid.uuid4())
@@ -312,8 +326,8 @@ def main() -> None:
     file_path = "eeg_recording.edf"
     results, freqs_list, psd_list, titles = process_edf_data(file_path)
     logger.info(f"Analysis results: {results}")
-    plot_power_in_bar_chart( psd_list, titles)
-    plot_relative_power_bar_chart( psd_list, titles)
+    plot_power_in_bar_chart(psd_list, titles)
+    plot_relative_power_bar_chart(psd_list, titles)
 
 
 if __name__ == "__main__":
