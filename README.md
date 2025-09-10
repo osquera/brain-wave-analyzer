@@ -157,3 +157,10 @@ _Linkenkaer-Hansen at el. (2001) showed that both MEG and EEG recordings of spon
 We clearly see that the full spectrum has a 1/f trend and if we look at at log plot it becomes clear it follows a power law.
 
 ![figures/full_log.png)](figures/full_log.png)
+
+# TODO's
+
+- Make the biomarkers which i find interesting
+- Create the scalp map visualization of the biomarkers
+- Create a pytest for the frontend
+- Make a github action which runs the pytest online for every major commit
