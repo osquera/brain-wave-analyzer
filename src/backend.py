@@ -26,19 +26,25 @@ parser.add_argument(
     help="Set the logging level",
 )
 
-args = parser.parse_args()
+# Only parse arguments when running as main script, not during imports or tests
+if __name__ == "__main__":
+    args = parser.parse_args()
+    log_level = args.log_level
+else:
+    # Default log level when imported as a module (e.g., during tests)
+    log_level = "INFO"
 
 # Set log level.
 logger.remove()
 logger.add(
     sys.stderr,
-    level=args.log_level,
+    level=log_level,
     format="<green>{time:HH:mm:ss}</green> | "
     "<blue><level>{level: <8}</level></blue> | "
     "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
     "<level>{message}</level>",
 )
-logger.info(f"Log level set to {args.log_level}.")
+logger.info(f"Log level set to {log_level}.")
 
 
 def read_mne_file(file_path: str) -> RawEDF:
@@ -244,11 +250,14 @@ async def analyze_edf_file(
             with temp_file as f:
                 shutil.copyfileobj(file.file, f)
         except Exception as e:
+            logger.error(f"Error saving uploaded file: {e!s}")
             raise HTTPException(status_code=500, detail=f"Error saving uploaded file: {e!s}") from e
     try:
         # Process the file using our functions
         low_freq = 0.1
         high_freq = 40.0
+
+        logger.debug(f"Processing file {temp_file.name} with start_time={start_time}")
 
         # Process data
         results, freqs_list, psd_list, titles = process_edf_data(
@@ -298,6 +307,8 @@ async def analyze_edf_file(
 
     except Exception as e:
         # Handle any exceptions
+        logger.error(f"Error processing file: {e!s}")
+        logger.exception("Full traceback:")
         raise HTTPException(status_code=500, detail=f"Error processing file: {e!s}") from e
 
     else:
