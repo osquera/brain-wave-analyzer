@@ -9,13 +9,19 @@ brain-wave-analyzer/
 ├── src/
 │   ├── backend.py        # FastAPI backend with analysis functions
 │   └── frontend.py       # Streamlit frontend application
+├── tests/
+│   ├── backend/          # Backend tests
+│   └── frontend/         # Frontend tests
+│   
 ├── static/
 │   └── figures/          # Generated plots saved here
 ├── backend.Dockerfile    # Docker configuration for API
 ├── frontend.Dockerfile   # Docker configuration for Streamlit
 ├── docker-compose.yml    # Docker Compose configuration
 ├── requirements-backend.txt
-└── requirements-frontend.txt
+├── requirements-frontend.txt
+├── .coveragerc           # Coverage configuration
+└── run_tests.bat         # Script to run tests with coverage
 ```
 ## Getting the Application
  1. git clone the repo
@@ -77,6 +83,44 @@ brain-wave-analyzer/
 - `GET /`: Welcome message
 - `POST /analyze-edf/`: Upload and analyze an EDF file
   - Returns analysis results and URLs to plots
+
+## Running Tests
+
+The project includes comprehensive unit tests for both the frontend and backend using pytest.
+
+### Install Testing Dependencies
+
+```
+pip install pytest pytest-cov pytest-mock httpx coverage
+```
+
+Or with uv:
+
+```
+uv sync --all-extras
+```
+
+### Run Tests with Coverage
+
+Run all tests with coverage reporting:
+
+```
+python -m pytest tests -v --cov=src --cov-report=term --cov-report=html
+```
+
+Or use the included batch script:
+
+```
+run_tests.bat
+```
+
+### View Coverage Report
+
+After running tests with coverage, you can open the HTML report:
+
+```
+start htmlcov\index.html
+```
 
 # Details on Implementation
 ## Loading and filtering
