@@ -17,12 +17,15 @@ brain-wave-analyzer/
 ├── requirements-backend.txt
 └── requirements-frontend.txt
 ```
+## Getting the Application
+ 1. git clone the repo
+ 2. cd to the root of the project (brain-wave-analyzer)
 
 ## Running the Application
 
 ### With Docker (Recommended)
 
-1. Make sure you have Docker installed
+1. Make sure you have Docker installed (and that it is runnning)
 2. Build and run the containers:
    ```
    docker-compose up --build
